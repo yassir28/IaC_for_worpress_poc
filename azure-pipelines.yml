@@ -1,0 +1,78 @@
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  TF_DIR: "terraform_azure"
+  ARM_SUBSCRIPTION_ID: $(ARM_SUBSCRIPTION_ID)
+  ARM_CLIENT_ID: $(ARM_CLIENT_ID)
+  ARM_CLIENT_SECRET: $(ARM_CLIENT_SECRET)
+  ARM_TENANT_ID: $(ARM_TENANT_ID)
+
+stages:
+  # ==================== DEPLOY ====================
+  - stage: Deploy
+    displayName: "Deploy Infrastructure"
+    jobs:
+      - job: TerraformDeploy
+        displayName: "Terraform Init → Apply"
+        steps:
+          - task: TerraformInstaller@1
+            displayName: "Install Terraform"
+            inputs:
+              terraformVersion: "latest"
+
+          - script: terraform init -input=false
+            displayName: "Terraform Init"
+            workingDirectory: $(TF_DIR)
+
+          - script: terraform validate
+            displayName: "Terraform Validate"
+            workingDirectory: $(TF_DIR)
+
+          - script: terraform apply -auto-approve -input=false
+            displayName: "Terraform Apply"
+            workingDirectory: $(TF_DIR)
+
+          - script: terraform output -json > $(Build.ArtifactStagingDirectory)/outputs.json
+            displayName: "Save Outputs"
+            workingDirectory: $(TF_DIR)
+
+          - publish: $(Build.ArtifactStagingDirectory)/outputs.json
+            artifact: tf-outputs
+            displayName: "Publish Terraform Outputs"
+
+  # ==================== POSTFLIGHT ====================
+  - stage: Postflight
+    displayName: "Health Checks"
+    dependsOn: Deploy
+    jobs:
+      - job: HealthCheck
+        displayName: "Validate Deployment"
+        steps:
+          - download: current
+            artifact: tf-outputs
+
+          - script: |
+              LB_IP=$(jq -r '.lb_public_ip.value' $(Pipeline.Workspace)/tf-outputs/outputs.json)
+              JUMP_IP=$(jq -r '.jumphost_public_ip.value' $(Pipeline.Workspace)/tf-outputs/outputs.json)
+
+              echo "=== Load Balancer Health ==="
+              for i in 1 2 3 4 5; do
+                STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$LB_IP --max-time 10 || echo "000")
+                echo "Attempt $i: HTTP $STATUS"
+                [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] && echo "LB OK" && break
+                sleep 15
+              done
+
+              echo "=== JumpHost SSH Check ==="
+              nc -z -w5 $JUMP_IP 22 && echo "JumpHost SSH OK" || echo "JumpHost SSH UNREACHABLE"
+
+              echo "=== Deployment Summary ==="
+              echo "WordPress URL: http://$LB_IP"
+              echo "JumpHost SSH:  ssh azureuser@$JUMP_IP"
+            displayName: "Run Health Checks"

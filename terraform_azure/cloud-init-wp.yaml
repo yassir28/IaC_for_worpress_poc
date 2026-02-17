@@ -1,0 +1,37 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+packages:
+  - apache2
+  - php
+  - php-mysql
+  - php-curl
+  - php-gd
+  - php-xml
+  - php-mbstring
+  - cifs-utils
+
+runcmd:
+  # Mount Azure Files share
+  - mkdir -p /var/www/html
+  - echo "//${storage_account_name}.file.core.windows.net/${share_name} /var/www/html cifs vers=3.0,username=${storage_account_name},password=${storage_account_key},dir_mode=0775,file_mode=0664,uid=www-data,gid=www-data,serverino 0 0" >> /etc/fstab
+  - mount -a
+
+  # Download WordPress if not already present (shared mount)
+  - |
+    if [ ! -f /var/www/html/wp-config.php ]; then
+      cd /tmp
+      curl -sO https://wordpress.org/latest.tar.gz
+      tar xzf latest.tar.gz
+      cp -rn /tmp/wordpress/* /var/www/html/
+      cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+      sed -i "s/database_name_here/${mysql_db}/" /var/www/html/wp-config.php
+      sed -i "s/username_here/${mysql_user}/" /var/www/html/wp-config.php
+      sed -i "s/password_here/${mysql_password}/" /var/www/html/wp-config.php
+      sed -i "s/localhost/${mysql_host}/" /var/www/html/wp-config.php
+      chown -R www-data:www-data /var/www/html
+    fi
+
+  # Enable Apache
+  - systemctl enable --now apache2
