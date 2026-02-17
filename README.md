@@ -73,11 +73,15 @@ Free tier includes 2,000 minutes/month on hosted runners.
    git remote set-url origin https://github.com/<USER>/wordpress-poc.git
    git push -u origin main
    ```
-2. **Add secrets** — GitHub → repo → Settings → Secrets and variables → Actions → New repository secret:
-   - `ARM_CLIENT_ID`
-   - `ARM_CLIENT_SECRET`
-   - `ARM_TENANT_ID`
-   - `ARM_SUBSCRIPTION_ID`
+2. **Add secrets** — GitHub repo → Settings → Secrets and variables → Actions → New repository secret:
+
+   | Secret | Where to find it |
+   |---|---|
+   | `ARM_CLIENT_ID` | App registrations → Application (client) ID |
+   | `ARM_CLIENT_SECRET` | The secret value from step 2 |
+   | `ARM_TENANT_ID` | App registrations → Directory (tenant) ID |
+   | `ARM_SUBSCRIPTION_ID` | Subscriptions → Subscription ID |
+
 3. Pipeline triggers automatically on push to `main`, or manually via Actions → Run workflow
 
 ---

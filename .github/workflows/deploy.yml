@@ -2,8 +2,8 @@ name: Deploy Infrastructure
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main]  # auto-triggers on every push to main
+  workflow_dispatch:   # allows manual trigger from Actions tab
 
 jobs:
   deploy:
