@@ -17,6 +17,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Generate SSH Key
+        run: ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+
       - uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
