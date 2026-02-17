@@ -1,0 +1,52 @@
+name: Deploy Infrastructure
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform_azure
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        working-directory: terraform_azure
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: terraform_azure
+        run: terraform apply -auto-approve -input=false
+
+      - name: Save Outputs
+        working-directory: terraform_azure
+        run: terraform output -json > outputs.json
+
+      - name: Health Check
+        working-directory: terraform_azure
+        run: |
+          LB_IP=$(jq -r '.lb_public_ip.value' outputs.json)
+
+          echo "=== Load Balancer Health ==="
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://$LB_IP --max-time 10 || echo "000")
+            echo "Attempt $i: HTTP $STATUS"
+            [ "$STATUS" = "200" ] || [ "$STATUS" = "302" ] && echo "LB OK" && break
+            sleep 15
+          done
+
+          echo "=== Deployment Summary ==="
+          echo "WordPress URL: http://$LB_IP"

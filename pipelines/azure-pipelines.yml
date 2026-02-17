@@ -59,7 +59,6 @@ stages:
 
           - script: |
               LB_IP=$(jq -r '.lb_public_ip.value' $(Pipeline.Workspace)/tf-outputs/outputs.json)
-              JUMP_IP=$(jq -r '.jumphost_public_ip.value' $(Pipeline.Workspace)/tf-outputs/outputs.json)
 
               echo "=== Load Balancer Health ==="
               for i in 1 2 3 4 5; do
@@ -69,10 +68,6 @@ stages:
                 sleep 15
               done
 
-              echo "=== JumpHost SSH Check ==="
-              nc -z -w5 $JUMP_IP 22 && echo "JumpHost SSH OK" || echo "JumpHost SSH UNREACHABLE"
-
               echo "=== Deployment Summary ==="
               echo "WordPress URL: http://$LB_IP"
-              echo "JumpHost SSH:  ssh azureuser@$JUMP_IP"
             displayName: "Run Health Checks"

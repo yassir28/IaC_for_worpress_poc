@@ -23,11 +23,11 @@ variable "ssh_public_key_path" {
   default = "~/.ssh/id_rsa.pub"
 }
 
-variable "admin_cidr" {
-  description = "CIDR allowed to SSH into jumphost"
-  type        = string
-  default     = "0.0.0.0/0"
-}
+# variable "admin_cidr" {
+#   description = "CIDR allowed to SSH into jumphost"
+#   type        = string
+#   default     = "0.0.0.0/0"
+# }
 
 variable "mysql_admin_user" {
   type      = string

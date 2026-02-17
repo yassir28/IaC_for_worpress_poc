@@ -1,20 +1,22 @@
 output "lb_public_ip" {
-  value = azurerm_public_ip.lb.ip_address
-}
-
-output "jumphost_public_ip" {
-  value = module.jumphost.public_ip
+  value = module.wordpress.lb_public_ip
 }
 
 output "mysql_fqdn" {
-  value     = azurerm_mysql_flexible_server.main.fqdn
+  value     = module.wordpress.mysql_fqdn
   sensitive = true
 }
 
-output "ssh_jump_command" {
-  value = module.jumphost.ssh_command
+output "wordpress_url" {
+  value = module.wordpress.wordpress_url
 }
 
-output "wordpress_url" {
-  value = "http://${azurerm_public_ip.lb.ip_address}"
-}
+# --- JumpHost outputs (uncomment when jumphost module is enabled) ---
+
+# output "jumphost_public_ip" {
+#   value = module.jumphost.public_ip
+# }
+#
+# output "ssh_jump_command" {
+#   value = module.jumphost.ssh_command
+# }
