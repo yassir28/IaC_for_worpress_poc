@@ -172,13 +172,8 @@ resource "azurerm_private_dns_zone_virtual_network_link" "mysql" {
   virtual_network_id    = var.vnet_id
 }
 
-resource "random_integer" "suffix" {
-  min = 1000
-  max = 9999
-}
-
 resource "azurerm_mysql_flexible_server" "main" {
-  name                   = "${var.project}-mysql-${random_integer.suffix.result}"
+  name                   = "${var.project}-mysql-db01"
   resource_group_name    = var.resource_group_name
   location               = var.location
   administrator_login    = var.mysql_admin_user
