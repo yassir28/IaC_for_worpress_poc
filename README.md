@@ -23,7 +23,9 @@ A "robot account" that gives the pipeline permission to create Azure resources. 
 
 1. **Register** — Azure Portal → "App registrations" → New registration → Name: `wordpress-poc-pipeline` → Register
 2. **Create secret** — Open the app → Certificates & secrets → New client secret → Copy the **Value** (shown only once)
-3. **Assign role** — Subscriptions → your subscription → Access control (IAM) → Add role assignment → Role: `Contributor` → Members: select `wordpress-poc-pipeline` → Assign
+3. **Assign role** — Subscriptions → your subscription → Access control (IAM) → Add role assignment:
+   - Role: `Contributor` → Next
+   - Members: "User, group, or service principal" → Select members → search `wordpress-poc-pipeline` → select → Review + assign
 
 > **CLI alternative:**
 > ```bash
