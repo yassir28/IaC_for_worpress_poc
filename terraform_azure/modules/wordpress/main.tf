@@ -194,3 +194,10 @@ resource "azurerm_mysql_flexible_database" "wordpress" {
   charset             = "utf8mb4"
   collation           = "utf8mb4_unicode_ci"
 }
+
+resource "azurerm_mysql_flexible_server_configuration" "ssl" {
+  name                = "require_secure_transport"
+  resource_group_name = var.resource_group_name
+  server_name         = azurerm_mysql_flexible_server.main.name
+  value               = "OFF"
+}
