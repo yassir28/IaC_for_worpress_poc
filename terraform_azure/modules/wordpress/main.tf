@@ -146,16 +146,15 @@ resource "azurerm_linux_virtual_machine" "wp" {
     version   = "latest"
   }
 
-  # custom_data disabled temporarily — re-enable to deploy WordPress
-  # custom_data = base64encode(templatefile("${path.module}/cloud-init-wp.yaml", {
-  #   storage_account_name = azurerm_storage_account.files.name
-  #   storage_account_key  = azurerm_storage_account.files.primary_access_key
-  #   share_name           = azurerm_storage_share.html.name
-  #   mysql_host           = azurerm_mysql_flexible_server.main.fqdn
-  #   mysql_user           = var.mysql_admin_user
-  #   mysql_password       = var.mysql_admin_password
-  #   mysql_db             = "wordpress"
-  # }))
+  custom_data = base64encode(templatefile("${path.module}/cloud-init-wp.yaml", {
+    storage_account_name = azurerm_storage_account.files.name
+    storage_account_key  = azurerm_storage_account.files.primary_access_key
+    share_name           = azurerm_storage_share.html.name
+    mysql_host           = azurerm_mysql_flexible_server.main.fqdn
+    mysql_user           = var.mysql_admin_user
+    mysql_password       = var.mysql_admin_password
+    mysql_db             = "wordpress"
+  }))
 }
 
 # --- MySQL Flexible Server ---
