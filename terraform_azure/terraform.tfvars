@@ -1,6 +1,6 @@
 project              = "wordpress-poc"
 location             = "West Europe"
-vm_size              = "Standard_B2s"
+vm_size              = "Standard_B2s_v2"
 admin_username       = "azureuser"
 ssh_public_key_path  = "~/.ssh/id_rsa.pub"
 # admin_cidr           = "0.0.0.0/0" # uncomment with jumphost
