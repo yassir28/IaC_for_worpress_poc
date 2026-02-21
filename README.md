@@ -57,10 +57,13 @@ ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
 
    | Variable | Where to find it |
    |---|---|
+   | Variable | Where to find it |
+   |---|---|
    | `ARM_CLIENT_ID` | App registrations → Application (client) ID |
    | `ARM_CLIENT_SECRET` | The secret value (mark **secret**) |
    | `ARM_TENANT_ID` | App registrations → Directory (tenant) ID |
    | `ARM_SUBSCRIPTION_ID` | Subscriptions → Subscription ID |
+   | `SSH_PUBLIC_KEY` | Contents of `~/.ssh/id_rsa_azure.pub` on your local machine |
 
 5. **Save and Run**
 
@@ -83,6 +86,7 @@ Free tier includes 2,000 minutes/month on hosted runners.
    | `ARM_CLIENT_SECRET` | The secret value from step 2 |
    | `ARM_TENANT_ID` | App registrations → Directory (tenant) ID |
    | `ARM_SUBSCRIPTION_ID` | Subscriptions → Subscription ID |
+   | `SSH_PUBLIC_KEY` | Contents of `~/.ssh/id_rsa_azure.pub` on your local machine |
 
 3. Pipeline triggers automatically on push to `main`, or manually via Actions → Run workflow
 
