@@ -97,3 +97,95 @@ git push → triggers pipeline (Azure DevOps or GitHub Actions) →
       creates resources in your subscription →
         health check verifies WordPress is up
 ```
+
+---
+
+## SSH Access
+
+Add these entries to `~/.ssh/config` on your local machine (update IPs if VMs are recreated):
+
+```
+Host wordpress-jump
+    HostName <jumphost-public-ip>
+    User azureuser
+    IdentityFile ~/.ssh/id_rsa_azure
+    ForwardAgent yes
+
+Host wordpress-wp-1
+    HostName 10.0.1.5
+    User azureuser
+    IdentityFile ~/.ssh/id_rsa_azure
+    ProxyJump wordpress-jump
+
+Host wordpress-wp-2
+    HostName 10.0.1.4
+    User azureuser
+    IdentityFile ~/.ssh/id_rsa_azure
+    ProxyJump wordpress-jump
+```
+
+Then connect with:
+```bash
+ssh wordpress-jump      # jumphost directly
+ssh wordpress-wp-1      # wp-1 via jumphost (no manual proxy needed)
+ssh wordpress-wp-2      # wp-2 via jumphost
+```
+
+> **Note:** Private IPs (10.0.1.x) are dynamic — update the config if VMs are recreated.
+> Find current IPs in Portal → `wordpress-poc-rg` → VM → Networking.
+
+---
+
+## WordPress Setup
+
+After a fresh deployment, visit `http://<lb-public-ip>` from a browser **outside Azure** to complete the WordPress installation wizard.
+
+> **Azure LB hairpin limitation:** Curling the LB public IP from within the same VNet (e.g. from the jumphost) will hang — this is expected Azure behavior. Always test from an external machine.
+
+To verify WordPress is serving from within the VNet, curl the VM directly:
+```bash
+# From jumphost
+curl -s -o /dev/null -w "%{http_code}" http://10.0.1.4   # should return 302
+```
+
+---
+
+## Load Balancing — POC vs Production
+
+This POC uses an **Azure Standard Load Balancer (L4)**, not an Application Gateway (L7).
+
+```
+POC:        Internet → Standard LB (L4, TCP:80) → WP-1 / WP-2
+
+Production: Internet → App Gateway (L7, WAF, HTTPS) → WP-1 / WP-2
+```
+
+**Why L7 is more secure than L4 (OSI layers):**
+L4 (Transport layer) only sees IP addresses and ports — it forwards raw TCP packets without inspecting content. L7 (Application layer) understands HTTP: it can read headers, URLs, cookies, and request bodies. This means an L7 gateway can block malicious payloads (SQL injection, XSS, bad User-Agent strings) before they ever reach your app. An L4 balancer passes everything through blindly.
+
+**What Azure Application Gateway adds over a Standard LB:**
+
+| Feature | Standard LB (this POC) | Application Gateway |
+|---|---|---|
+| Layer | L4 (TCP/UDP) | L7 (HTTP/HTTPS) |
+| SSL termination | No (HTTP only) | Yes (HTTPS at gateway) |
+| WAF | No | Yes (OWASP top-10 rules) |
+| Cookie-based session affinity | No | Yes (sticky sessions) |
+| Path-based routing | No | Yes (`/api/*` → backend A) |
+| Cost | ~$0 basic | ~$120+/mo minimum |
+
+For a POC demonstrating HA, the Standard LB is sufficient. Application Gateway would be the next step before production.
+
+---
+
+## Takeaways
+
+**Azure SKU availability is regional and subscription-dependent.** `Standard_B1s` and `Standard_B2s` had no capacity in West Europe, and `Standard_Bsv2` family had zero approved quota. Always verify with `az vm list-skus` and `az vm list-usage` before picking a size. `Standard_D2s_v3` (DSv3 family) was the first size with both quota and available capacity.
+
+**`terraform.tfvars` overrides `variables.tf` defaults.** Changing a default in `variables.tf` has no effect if the same variable is set in `terraform.tfvars`. Both files must be updated together.
+
+**Azure MySQL Flexible Server auto-assigns an availability zone.** If `zone` is not specified in Terraform, Azure picks one (e.g. `"1"`). On subsequent plans Terraform detects drift and tries to unset it, which Azure rejects. Pin `zone` explicitly to match what Azure assigned.
+
+**Partial apply leaves state inconsistent.** When a `terraform apply` partially succeeds (e.g. MySQL created, VMs failed), re-running apply only attempts the remaining resources. No manual cleanup needed — Terraform reconciles from state.
+
+**Health check timing matters.** VMs take 1–3 minutes after creation for cloud-init to finish installing WordPress. A health check run immediately after `apply` will see HTTP 000 (not listening) or HTTP 500 (still initializing). Add a longer initial wait or increase retry attempts for a reliable check.
