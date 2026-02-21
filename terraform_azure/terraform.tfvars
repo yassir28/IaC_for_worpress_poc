@@ -3,6 +3,6 @@ location             = "West Europe"
 vm_size              = "Standard_D2s_v3"
 admin_username       = "azureuser"
 ssh_public_key_path  = "~/.ssh/id_rsa.pub"
-# admin_cidr           = "0.0.0.0/0" # uncomment with jumphost
+admin_cidr           = "0.0.0.0/0" # restrict to your IP in production: "x.x.x.x/32"
 mysql_admin_user     = "wpadmin"
 mysql_admin_password = "CHANGE_ME_P@ssw0rd!"
