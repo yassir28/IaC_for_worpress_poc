@@ -92,6 +92,46 @@ Free tier includes 2,000 minutes/month on hosted runners.
 
 ---
 
+## Azure Resources Overview
+
+All resources live in `wordpress-poc-rg`. Here's what each one does:
+
+**Compute**
+| Resource | Type | Role |
+|---|---|---|
+| `wordpress-poc-jumphost` | Virtual Machine | Bastion — only machine with a public SSH port. SSH here first, then hop to WP VMs |
+| `wordpress-poc-wp-1` | Virtual Machine | WordPress app server 1 — runs Apache + PHP, serves HTTP traffic |
+| `wordpress-poc-wp-2` | Virtual Machine | WordPress app server 2 — identical to wp-1, provides HA if wp-1 fails |
+| `wordpress-poc-jumphost_OsDisk_...` | Disk | OS boot disk for jumphost |
+| `wordpress-poc-wp-1_OsDisk_...` | Disk | OS boot disk for wp-1 |
+| `wordpress-poc-wp-2_OsDisk_...` | Disk | OS boot disk for wp-2 |
+
+**Networking**
+| Resource | Type | Role |
+|---|---|---|
+| `wordpress-poc-vnet` | Virtual Network | The VNet (10.0.0.0/16) — contains all 3 subnets: web, db, jump |
+| `wordpress-poc-lb` | Load Balancer | L4 load balancer — distributes HTTP traffic between wp-1 and wp-2 |
+| `wordpress-poc-lb-pip` | Public IP | Public IP of the LB — the address users visit in the browser |
+| `wordpress-poc-jump-pip` | Public IP | Public IP of the jumphost — the address you SSH into from your machine |
+| `wordpress-poc-jump-nic` | Network Interface | NIC for jumphost — connects it to the jump subnet |
+| `wordpress-poc-wp-nic-1` | Network Interface | NIC for wp-1 — connects it to the web subnet |
+| `wordpress-poc-wp-nic-2` | Network Interface | NIC for wp-2 — connects it to the web subnet |
+| `wordpress-poc-web-nsg` | Network Security Group | Firewall for web subnet — allows :80 from internet, :22 from jump subnet only |
+| `wordpress-poc-jump-nsg` | Network Security Group | Firewall for jump subnet — allows :22 from anywhere (SSH entry point) |
+
+**Database**
+| Resource | Type | Role |
+|---|---|---|
+| `wordpress-poc-mysql-db01` | MySQL Flexible Server | MySQL 8 — stores all WordPress data (posts, users, settings) |
+| `wordpress-poc.mysql.database.azure.com` | Private DNS Zone | Resolves MySQL hostname to its private IP — traffic never leaves the VNet |
+
+**Shared Storage**
+| Resource | Type | Role |
+|---|---|---|
+| `wordpresspocfiles` | Storage Account | Hosts an Azure Files SMB share mounted at `/var/www/html` on both WP VMs — ensures both servers serve identical WordPress files |
+
+---
+
 ## How It All Connects
 
 ```
