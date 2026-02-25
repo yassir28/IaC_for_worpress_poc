@@ -1,4 +1,4 @@
-# WordPress POC - HA on Azure
+# WordPress POC - HA on Azure - Final 
 
 ## Setup
 
